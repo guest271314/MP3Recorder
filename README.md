@@ -15,3 +15,6 @@ let blob = await recorder.stop();
 #### MP3 (license) references
 - https://www.iis.fraunhofer.de/en/ff/amm/consumer-electronics/mp3.html
 - https://www.audioblog.iis.fraunhofer.com/mp3-software-patents-licenses
+
+#### License
+Do What the Fuck You Want to Public License [WTFPLv2](http://www.wtfpl.net/about/)
