@@ -11,16 +11,31 @@ class MP3Recorder {
       audioTrack,
     });
     this.writer = this.writable.getWriter();
-    const processor = `class AudioWorkletStream extends AudioWorkletProcessor {
-        process(inputs, outputs) {
-          this.port.postMessage(inputs.flat());
-          return true;
-        }
-      };
-      registerProcessor(
-        "audio-worklet-stream",
-        AudioWorkletStream
-      )`;
+    this.audioTrack.onended = (e) => this.stop(e);
+    const processor = `
+const channels = [
+  [],
+  []
+];
+class AudioWorkletStream extends AudioWorkletProcessor {
+  process(inputs, outputs) {
+    const floats = inputs.flat();
+    // Accumulate ~1 second of audio to decrease postMessage() calls
+    if (channels[0].length < 128 * 344) {
+      channels[0].push(...floats[0]);
+      channels[1].push(...floats[1]);
+      if (channels[0].length === 128 * 344) {
+        this.port.postMessage(channels);
+        channels[0].length = channels[1].length = 0;
+      }
+    }
+    return true;
+  }
+};
+registerProcessor(
+  "audio-worklet-stream",
+  AudioWorkletStream
+)`;
     this.worklet = URL.createObjectURL(
       new Blob([processor], {
         type: "text/javascript",
@@ -34,6 +49,7 @@ class MP3Recorder {
     const { resolve, promise } = Promise.withResolvers();
     this.promise = promise;
     this.ac.onstatechange = async (e) => {
+      console.log(e.target.state);
       if (this.ac.state === "closed") {
         const mp3buffer = this.mp3encoder.flush();
         if (mp3buffer.length > 0) {
@@ -52,6 +68,9 @@ class MP3Recorder {
           },
         );
         resolve(blob);
+        if (globalThis.gc) {
+          gc();
+        }
       }
     };
     return this.ac.suspend().then(async () => {
@@ -113,6 +132,10 @@ class MP3Recorder {
             console.error(e, this.ac.state);
             this.aw.port.close();
             this.aw.port.onmessage = null;
+          } finally {
+            if (globalThis.gc) {
+              gc();
+            }
           }
         }
       };
@@ -127,14 +150,16 @@ class MP3Recorder {
     await this.ac.resume();
     return this.audioTrack;
   }
-  async stop() {
-    this.audioTrack.stop();
-    if (this.ac.state === "running") {
+  async stop(e) {
+    if (e?.type === "ended" || this.audioTrack.readyState === "live") {
+      this.audioTrack.stop();
       this.msasn.disconnect();
       this.aw.disconnect();
+      this.aw.port.close();
+      this.aw.port.onmessage = null;
       await this.ac.close();
-      return this.promise;
     }
+    return this.promise;
   }
 }
 
