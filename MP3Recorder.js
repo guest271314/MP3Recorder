@@ -31,7 +31,7 @@ class MP3Recorder {
     this.ac.onstatechange = async (e) => {
       console.log(e.target.state);
     };
-    return this.ac.resume().then(async () => {
+    return this.ac.suspend().then(async () => {
       const dir = await navigator.storage.getDirectory();
       const entries = await Array.fromAsync(dir.keys());
       let handle;
