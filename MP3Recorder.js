@@ -146,7 +146,7 @@ registerProcessor(
     }).catch(e => console.log(e));
   }
   async start() {
-    return this.ac.resume().catch(e => console.log(e));
+    return this.ac.resume().then(() => this.audioTrack).catch(e => console.log(e));
   }
   async stop(e) {
     this.aw.port.postMessage(null);
