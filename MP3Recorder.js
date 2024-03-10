@@ -36,7 +36,7 @@ class MP3Recorder {
       const file = await handle.getFile();
       const url = URL.createObjectURL(file);
       const { lamejs } = await import(url);
-      this.mp3encoder = new lamejs.Mp3Encoder(2, 44100, 128);
+      this.mp3encoder = new lamejs.Mp3Encoder(2, 44100, 192);
       return this;
     })();
   }
