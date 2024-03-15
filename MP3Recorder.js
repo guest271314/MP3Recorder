@@ -6,7 +6,7 @@ class MP3Recorder {
       readable,
       writable
     } = new TransformStream({}, {}, {
-      highWaterMark: Infinity,
+      highWaterMark: 65536,
     });
     Object.assign(this, {
       readable,
