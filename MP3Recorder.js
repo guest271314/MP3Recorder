@@ -2,17 +2,7 @@
 // https://www.audioblog.iis.fraunhofer.com/mp3-software-patents-licenses
 class MP3Recorder {
   constructor(audioTrack) {
-    const {
-      readable,
-      writable
-    } = new TransformStream({}, {}, {
-      highWaterMark: 65536,
-    });
-    Object.assign(this, {
-      readable,
-      writable,
-      audioTrack,
-    });
+    this.audioTrack = audioTrack;
     this.writer = this.writable.getWriter();
     this.audioTrack.onended = this.stop.bind(this);
 
@@ -27,7 +17,7 @@ class MP3Recorder {
       promise
     } = Promise.withResolvers();
     this.promise = promise;
-
+    this.resolve = resolve;
     this.ac.onstatechange = async (e) => {
       console.log(e.target.state);
     };
@@ -128,7 +118,7 @@ registerProcessor(
           const blob = new Blob([await new Response(e.data).arrayBuffer()], {
             type: "audio/mp3",
           });
-          resolve(blob);
+          this.resolve(blob);
           console.log(blob);
           this.audioTrack.stop();
           this.msasn.disconnect();
