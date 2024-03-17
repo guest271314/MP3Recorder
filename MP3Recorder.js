@@ -3,7 +3,6 @@
 class MP3Recorder {
   constructor(audioTrack) {
     this.audioTrack = audioTrack;
-    this.writer = this.writable.getWriter();
     this.audioTrack.onended = this.stop.bind(this);
 
     this.ac = new AudioContext({
