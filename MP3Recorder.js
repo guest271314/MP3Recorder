@@ -9,7 +9,7 @@ class MP3Recorder {
       transform(value, c) {
         c.enqueue(value);
       },
-      flush: () => {
+      flush: ()=>{
         console.log("flush", this.controller.desiredSize);
       }
     }));
@@ -26,22 +26,27 @@ class MP3Recorder {
       const dir = await navigator.storage.getDirectory();
       const entries = await Array.fromAsync(dir.keys());
       let handle;
-      if (!entries.includes("lames.js")) {
-        handle = await dir.getFileHandle("lame.js", {
+      if (!entries.includes("mp3.min.js")) {
+        handle = await dir.getFileHandle("mp3.min.js", {
           create: true,
         });
-        await new Blob([await (await fetch("https://raw.githubusercontent.com/guest271314/captureSystemAudio/master/native_messaging/capture_system_audio/lame.min.js", )).arrayBuffer(), ],{
-          type: "text/javascript",
+        await new Blob([await (await fetch("https://raw.githubusercontent.com/guest271314/MP3Recorder/main/mp3.min.js", )).arrayBuffer(), ],{
+          type: "application/wasm",
         }).stream().pipeTo(await handle.createWritable());
       } else {
-        handle = await dir.getFileHandle("lame.js", {
+        handle = await dir.getFileHandle("mp3.min.js", {
           create: false,
         });
       }
       const file = await handle.getFile();
       const url = URL.createObjectURL(file);
-      const {lamejs} = await import(url);
-      this.mp3encoder = new lamejs.Mp3Encoder(2,44100,128);
+      const {instantiate} = await import(url);
+      this.Encoder = await instantiate();
+      this.encoder = this.Encoder.create({
+        numChannels: 2,
+        sampleRate: 44100,
+        samples: 2048,
+      });
       return this;
     }
     )();
@@ -50,7 +55,6 @@ class MP3Recorder {
     try {
       this.processor.readable.pipeTo(new WritableStream({
         write: async(frame,controller)=>{
-          // https://github.com/zhuker/lamejs/commit/e18447fefc4b581e33a89bd6a51a4fbf1b3e1660
           const channels = Array.from({
             length: frame.numberOfChannels,
           }, (_,planeIndex)=>{
@@ -61,17 +65,10 @@ class MP3Recorder {
             frame.copyTo(buffer, {
               planeIndex,
             });
-            return new Int32Array([...new Float32Array(buffer)].map((float)=>float > 0 ? float * 0x7FFF : float * 0x8000),);
+            return new Float32Array(buffer);
           }
           );
-          const mp3buffer = this.mp3encoder.encodeBuffer(...channels);
-          if (mp3buffer.length > 0) {
-            try {
-              this.controller.enqueue(new Uint8Array(mp3buffer));
-            } catch (e) {
-              console.error(e);
-            }
-          }
+          this.controller.enqueue(this.encoder.encode(...channels));
         }
         ,
       }));
@@ -82,14 +79,7 @@ class MP3Recorder {
     return this.track;
   }
   async stop(e) {
-    const mp3buffer = this.mp3encoder.flush();
-    if (mp3buffer.length > 0) {
-      try {
-        this.controller.enqueue(new Uint8Array(mp3buffer));
-      } catch (e) {
-        console.error(e);
-      }
-    }
+    this.encoder.close();
     console.log(this.controller.desiredSize);
     this.controller.close();
     if (this.track.readyState === "live") {
