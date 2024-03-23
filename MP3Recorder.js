@@ -27,7 +27,7 @@ class MP3Recorder {
           create: true,
         });
         await new Blob([await (await fetch("https://raw.githubusercontent.com/guest271314/MP3Recorder/main/mp3.min.js", )).arrayBuffer(), ],{
-          type: "application/wasm",
+          type: "text/javascript",
         }).stream().pipeTo(await handle.createWritable());
       } else {
         handle = await dir.getFileHandle("mp3.min.js", {
