@@ -10,7 +10,7 @@ let blob = await recorder.stop();
 ```
 
 #### Dependencies
-[Ecmascript Module version](https://raw.githubusercontent.com/guest271314/captureSystemAudio/master/native_messaging/capture_system_audio/lame.min.js) of [lamejs](https://github.com/zhuker/lamejs/).
+[mp3](https://github.com/etercast/mp3).
 
 #### MP3 (license) references
 - https://www.iis.fraunhofer.de/en/ff/amm/consumer-electronics/mp3.html
