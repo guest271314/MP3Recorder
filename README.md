@@ -4,9 +4,29 @@ Record `MediaStreamTrack` to MP3 file in the browser
 #### Usage
 
 ```
-let recorder = await new MP3Recorder(mediaStream.getAudioTracks()[0]);
-await recorder.start();
-let blob = await recorder.stop();
+var stream = await navigator.mediaDevices.getUserMedia({
+  audio: {
+    channelCount: 2,
+    sampleRate: 44100,
+    noiseSuppression: false,
+    autoGainControl: false,
+    echoCancellation: false,
+  }
+});
+var [audioTrack] = stream.getAudioTracks();
+
+var recorder = await new MP3Recorder(audioTrack);
+var start = await recorder.start();
+```
+```
+recorder.stop().then(async(blob) => {
+  console.log(URL.createObjectURL(blob));
+  var handle = await showSaveFilePicker({
+    suggestedName: "download.mp3",
+    startIn:'music'
+  });
+  blob.stream().pipeTo(await handle.createWritable())
+}).catch(console.error);
 ```
 
 #### Dependencies
